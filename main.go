@@ -49,6 +49,14 @@ func (g *Game) Update() error {
 		}
 	}
 
+	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonRight) {
+		x, y := ebiten.CursorPosition()
+		i, j := pixelToTile(x, y)
+		if g.board.inBounds(i, j) {
+			g.board.toggleFlag(i, j)
+		}
+	}
+
 	state := g.board.gameOver()
 	if state != inProgress {
 		g.gameOver = true

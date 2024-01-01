@@ -4,6 +4,22 @@ import (
 	"fmt"
 )
 
+func newBoard() board {
+	o := tile{false, noFlag}
+	x := tile{true, noFlag}
+
+	return [][]tile{
+		{o, o, o, o, x, x, o, o, o, o},
+		{x, o, o, o, o, x, o, o, x, o},
+		{o, o, o, o, o, o, o, o, o, o},
+		{x, o, o, o, o, o, o, o, o, o},
+		{o, o, o, o, o, o, o, o, o, o},
+		{o, o, o, o, o, o, x, x, o, o},
+		{o, o, o, o, x, o, o, o, o, o},
+		{o, o, o, o, o, o, o, o, x, o},
+	}
+}
+
 // Non-empty rectangle.
 type board [][]tile
 
@@ -18,6 +34,46 @@ const (
 	noFlag visibility = iota
 	flag
 	revealed
+)
+
+func (b board) bounds() (i, j int) {
+	return len(b), len(b[0])
+}
+
+func (b board) inBounds(i, j int) bool {
+	h, w := b.bounds()
+	return 0 <= i && i < h && 0 <= j && j < w
+}
+
+func (b board) gameOver() gameOver {
+	numRevealed := 0
+	numMines := 0
+	for _, row := range b {
+		for _, tile := range row {
+			if tile.vis == revealed {
+				numRevealed++
+			}
+			if tile.has_mine {
+				numMines++
+			}
+			if tile.vis == revealed && tile.has_mine {
+				return lose
+			}
+		}
+	}
+
+	if numRevealed+numMines == len(b)*len(b[0]) {
+		return win
+	}
+	return inProgress
+}
+
+type gameOver = int
+
+const (
+	inProgress gameOver = iota
+	lose
+	win
 )
 
 // If there's a flag, do nothing.
@@ -41,22 +97,7 @@ func (b board) toggleFlag(i, j int) {
 	}
 }
 
-func newBoard() board {
-	o := tile{false, noFlag}
-	x := tile{true, noFlag}
-
-	return [][]tile{
-		{o, o, o, o, x, x, o, o, o, o},
-		{x, o, o, o, o, x, o, o, x, o},
-		{o, o, o, o, o, o, o, o, o, o},
-		{x, o, o, o, o, o, o, o, o, o},
-		{o, o, o, o, o, o, o, o, o, o},
-		{o, o, o, o, o, o, x, x, o, o},
-		{o, o, o, o, x, o, o, o, o, o},
-		{o, o, o, o, o, o, o, o, x, o},
-	}
-}
-
+// No trailing newline.
 func (b board) String() string {
 	s := ""
 	for i := range b {
@@ -102,43 +143,3 @@ func (b board) neighboringMines(i, j int) int {
 	}
 	return out
 }
-
-func (b board) bounds() (i, j int) {
-	return len(b), len(b[0])
-}
-
-func (b board) inBounds(i, j int) bool {
-	h, w := b.bounds()
-	return 0 <= i && i < h && 0 <= j && j < w
-}
-
-func (b board) gameOver() gameOver {
-	numRevealed := 0
-	numMines := 0
-	for _, row := range b {
-		for _, tile := range row {
-			if tile.vis == revealed {
-				numRevealed++
-			}
-			if tile.has_mine {
-				numMines++
-			}
-			if tile.vis == revealed && tile.has_mine {
-				return lose
-			}
-		}
-	}
-
-	if numRevealed+numMines == len(b)*len(b[0]) {
-		return win
-	}
-	return inProgress
-}
-
-type gameOver = int
-
-const (
-	inProgress gameOver = iota
-	lose
-	win
-)

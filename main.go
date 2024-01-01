@@ -34,40 +34,43 @@ func main() {
 		}
 		l := lines.Text()
 
-		words := strings.Fields(l)
-		if len(words) != 2 {
-			fmt.Println("Enter two numbers; e.g.: 1 2")
-			continue
-		}
-		coords := make([]int, 2)
-		var err error
-		coords[0], err = strconv.Atoi(words[0])
+		row, col, err := parseLine(b, l)
 		if err != nil {
-			fmt.Println("Expected a number.", err)
-			continue
-		}
-		coords[1], err = strconv.Atoi(words[1])
-		if err != nil {
-			fmt.Println("Expected a number.", err)
-			continue
-		}
-		if coords[0] < 0 {
-			fmt.Println("Negative number:", coords[0])
-			continue
-		}
-		if coords[1] < 0 {
-			fmt.Println("Negative number:", coords[1])
-			continue
-		}
-		if coords[0] >= len(b) {
-			fmt.Println("Out of bounds. Largest row coord is", len(b)-1)
-			continue
-		}
-		if coords[1] >= len(b[0]) {
-			fmt.Println("Out of bounds. Largest column coord is", len(b[0])-1)
+			fmt.Println(err)
 			continue
 		}
 
-		b.reveal(coords[0], coords[1])
+		b.reveal(row, col)
 	}
+}
+
+func parseLine(b board, line string) (row, col int, err error) {
+	nrows, ncols := b.bounds()
+	dims := []int{nrows, ncols}
+
+	words := strings.Fields(line)
+	if len(words) != 2 {
+		return 0, 0, fmt.Errorf("Enter two numbers; e.g.: 1 2")
+	}
+
+	coords := make([]int, 2)
+	for i, w := range words {
+		n, err := strconv.Atoi(w)
+		if err != nil {
+			return 0, 0, fmt.Errorf("Expected a number, got %v", w)
+		}
+		if n < 0 {
+			return 0, 0, fmt.Errorf("Negative number: %v", n)
+		}
+		if n >= dims[i] {
+			rowCol := "row"
+			if i == 1 {
+				rowCol = "col"
+			}
+			return 0, 0, fmt.Errorf("Out of bounds. Largest %v coord is %v", rowCol, dims[i]-1)
+		}
+		coords[i] = n
+	}
+
+	return coords[0], coords[1], nil
 }

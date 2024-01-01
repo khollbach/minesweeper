@@ -4,37 +4,6 @@ import (
 	"fmt"
 )
 
-func (b board) gameOver() gameOver {
-	numRevealed := 0
-	numMines := 0
-	for _, row := range b {
-		for _, tile := range row {
-			if tile.vis == revealed {
-				numRevealed++
-			}
-			if tile.has_mine {
-				numMines++
-			}
-			if tile.vis == revealed && tile.has_mine {
-				return lose
-			}
-		}
-	}
-
-	if numRevealed+numMines == len(b)*len(b[0]) {
-		return win
-	}
-	return inProgress
-}
-
-type gameOver = int
-
-const (
-	inProgress gameOver = iota
-	lose
-	win
-)
-
 // Non-empty rectangle.
 type board [][]tile
 
@@ -142,3 +111,34 @@ func (b board) inBounds(i, j int) bool {
 	h, w := b.bounds()
 	return 0 <= i && i < h && 0 <= j && j < w
 }
+
+func (b board) gameOver() gameOver {
+	numRevealed := 0
+	numMines := 0
+	for _, row := range b {
+		for _, tile := range row {
+			if tile.vis == revealed {
+				numRevealed++
+			}
+			if tile.has_mine {
+				numMines++
+			}
+			if tile.vis == revealed && tile.has_mine {
+				return lose
+			}
+		}
+	}
+
+	if numRevealed+numMines == len(b)*len(b[0]) {
+		return win
+	}
+	return inProgress
+}
+
+type gameOver = int
+
+const (
+	inProgress gameOver = iota
+	lose
+	win
+)

@@ -77,11 +77,45 @@ const (
 )
 
 // If there's a flag, do nothing.
+//
+// If you reveal an empty square with no adjacent mines, auto-reveal the whole
+// area, as far as it extends. (The most fun part of minesweeper!)
 func (b board) reveal(i, j int) {
+	seen := make(map[point]bool)
+	b.revealHelper(i, j, seen)
+}
+
+// Helper for `board.reveal`.
+type point struct {
+	i, j int
+}
+
+func (b board) revealHelper(i, j int, seen map[point]bool) {
+	if seen[point{i, j}] {
+		return
+	}
+	seen[point{i, j}] = true
+
+	// Reveal this tile.
 	if b[i][j].vis == flag {
 		return
 	}
 	b[i][j].vis = revealed
+
+	if b[i][j].has_mine || b.neighboringMines(i, j) > 0 {
+		return
+	}
+
+	// Recurse!
+	for _, di := range []int{-1, 0, 1} {
+		for _, dj := range []int{-1, 0, 1} {
+			i2 := i + di
+			j2 := j + dj
+			if b.inBounds(i2, j2) {
+				b.revealHelper(i2, j2, seen)
+			}
+		}
+	}
 }
 
 // If the square is revealed, do nothing.

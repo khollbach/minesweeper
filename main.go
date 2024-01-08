@@ -2,20 +2,25 @@ package main
 
 import (
 	"fmt"
+	"image"
 	"image/color"
+	_ "image/png"
 	"log"
+	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
-	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 func main() {
 	ebiten.SetWindowTitle("Minesweeper")
 
 	b := newBoard()
+
+	// Scale up the window to make it easier to see.
 	x, y := b.pixelDims()
+	x *= 4
+	y *= 4
 	ebiten.SetWindowSize(x, y)
 
 	if err := ebiten.RunGame(newGame(b)); err != nil {
@@ -83,36 +88,51 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	for i, row := range g.board {
 		for j, tile := range row {
-			var color color.RGBA
-			var text string
+			var sprite string
 
 			switch tile.vis {
 			case noFlag:
-				color = grey()
+				sprite = "blank"
 			case flag:
-				color = red()
+				sprite = "flag"
 			case revealed:
 				if tile.has_mine {
-					color = black()
+					sprite = "mine"
 				} else {
-					color = white()
+					sprite = "blank-pressed"
 					if n := g.board.neighboringMines(i, j); n != 0 {
-						text = fmt.Sprint(n)
+						sprite = fmt.Sprint(n)
 					}
 				}
 			default:
 				panic("unreachable")
 			}
 
+			// TODO: it's silly to read the files from disk every frame;
+			// we should do this once and save them in memory.
+			reader, err := os.Open("sprites/" + sprite + ".png")
+			if err != nil {
+				log.Fatalf("couldn't open file for sprite %q %v", sprite, err)
+			}
+			image, fmt, err := image.Decode(reader)
+			if err != nil {
+				log.Fatalf("error decoding sprite %q %q %v", sprite, fmt, err)
+			}
+			if fmt != "png" {
+				log.Fatalf("expected png got %q", fmt)
+			}
+
 			x, y := topLeft(i, j)
-			vector.DrawFilledRect(screen, float32(x), float32(y), float32(tileSize), float32(tileSize), color, false)
-			ebitenutil.DebugPrintAt(screen, text, x, y)
+			im := ebiten.NewImageFromImage(image)
+			op := ebiten.DrawImageOptions{}
+			op.GeoM.Translate(float64(x), float64(y))
+			screen.DrawImage(im, &op)
 		}
 	}
 }
 
 // The side-length of a tile, in pixels.
-const tileSize = 64
+const tileSize = 16
 
 func (b board) pixelDims() (x, y int) {
 	h, w := b.bounds()
